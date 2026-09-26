@@ -1,0 +1,6 @@
+pillow
+qrcode
+arabic-reshaper
+python-bidi
+pywin32
+pyinstaller

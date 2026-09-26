@@ -1,0 +1,18 @@
+# macOS cruft
+.DS_Store
+**/.DS_Store
+
+# Python build artifacts
+labelapp/build/
+labelapp/dist/
+**/__pycache__/
+*.spec
+
+# Runtime state
+.xp236b_label_logo.png
+
+# Compiled app binary — shipped via GitHub Releases, not committed
+XP236B-Label-Studio/app/
+
+# Release zips — uploaded as GitHub Release assets, not committed
+*.zip

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XP-236B Label Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+ :root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--fg:#e8eaed;--mut:#9aa4b2;--acc:#4c8dff}
+ @media(prefers-color-scheme:light){:root{--bg:#f4f5f7;--card:#fff;--line:#e2e5ea;--fg:#1a1c20;--mut:#5b6472;--acc:#2f6bff}}
+ *{box-sizing:border-box}
+ body{margin:0;font:15px/1.4 Vazirmatn,-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+ .wrap{max-width:940px;margin:0 auto;padding:24px}
+ h1{font-size:20px;margin:0 0 2px}.sub{color:var(--mut);font-size:13px;margin:0 0 18px}
+ .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--mut);margin-bottom:18px}
+ .grid{display:grid;grid-template-columns:1fr 360px;gap:24px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+ .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+ label{display:block;font-size:12px;color:var(--mut);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+ input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--fg);font-size:15px;font-family:inherit}
+ .row{display:flex;gap:10px;align-items:center}.row input[type=checkbox]{width:auto}
+ .row label{margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--fg)}
+ .half{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ button{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+ button:active{transform:translateY(1px)}
+ .preview{display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:24px}
+ .paper{background:#fff;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);overflow:hidden}
+ .paper canvas{display:block}
+ .dim{color:var(--mut);font-size:12px}
+ .logorow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:6px}
+ .ghost{margin:0;background:transparent;border:1px solid var(--line);color:var(--fg);width:auto;padding:8px 14px;font-size:14px}
+ .copies{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+ .batchbox{margin-top:20px;padding-top:16px;border-top:1px dashed var(--line)}
+ .batchhead{font-size:13px;font-weight:700;margin-bottom:10px}
+ #printArea{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <h1>XP-236B Label Studio <span class="dim" style="font-weight:400">· web</span></h1>
+ <p class="sub">Design labels in your browser · print with <b>Ctrl/Cmd-P</b> to your XP-236B</p>
+ <div class="note">
+   Online designer. To print: click <b>Print</b> (or Ctrl/Cmd-P), pick your <b>XP-236B</b>, set
+   scale to <b>100% / Actual size</b> and margins to <b>None</b>. For exact sizes and one-click
+   batch runs, the desktop app still prints best.
+ </div>
+ <div class="grid">
+  <div class="card">
+   <label>Label size</label>
+   <select id="size">
+     <option value="60x40" selected>60 × 40 mm roll (48 mm printable)</option>
+     <option value="40x30">40 × 30 mm roll (full width)</option>
+   </select>
+
+   <label>Layout</label>
+   <select id="layout">
+     <option value="stacked" selected>Stacked — code &amp; QR over each other</option>
+     <option value="side">Side by side — code &amp; QR next to each other</option>
+   </select>
+
+   <div class="row" style="margin:14px 0 4px"><input type="checkbox" id="logo"><label for="logo">Show company logo</label></div>
+   <div class="logorow">
+     <input id="logofile" type="file" accept="image/*" style="padding:6px">
+     <button type="button" id="clearlogo" class="ghost">Clear</button>
+   </div>
+
+   <label>Code</label><input id="code" value="IT-00393" placeholder="IT-00393">
+   <label>Second line <span class="dim">(optional)</span></label><input id="line2" placeholder="e.g. Dept / model">
+   <label>Third line <span class="dim">(optional)</span></label><input id="line3" placeholder="e.g. date / serial">
+   <label>QR encodes <span class="dim">(blank = same as code)</span></label><input id="qr_value" placeholder="IT-00393 (or a URL)">
+   <label>Footer line 1</label><input id="footer" value="Property of the Hamagan">
+   <label>Footer line 2 <span class="dim">(optional)</span></label><input id="footer2" placeholder="اتاق پشتیبانی (No: 30)">
+
+   <label>Shift left / right <span class="dim">(mm — negative = left)</span></label>
+   <div class="row"><input id="nudge" type="range" min="-8" max="8" step="0.5" value="0" style="flex:1"><span id="nudgeval" class="dim" style="min-width:52px">0.0 mm</span></div>
+
+   <div class="copies">
+     <div><label>Copies</label><input id="copies" type="number" min="1" max="200" value="1"></div>
+     <button id="printbtn" style="margin:0">🖨️ Print</button>
+   </div>
+
+   <div class="batchbox">
+    <div class="batchhead">Sequential batch <span class="dim">— increments the number</span></div>
+    <div class="half">
+      <div><label>From code</label><input id="from_code" placeholder="CH-00001"></div>
+      <div><label>To code</label><input id="to_code" placeholder="CH-00099"></div>
+    </div>
+    <button id="batchbtn" class="ghost" style="margin-top:14px;width:100%">🖨️ Print batch — <span id="batchcount">0</span> labels</button>
+   </div>
+  </div>
+
+  <div class="preview">
+   <div class="paper"><canvas id="prev"></canvas></div>
+   <div class="dim">live preview · actual size on print</div>
+  </div>
+ </div>
+</div>
+<div id="printArea"></div>
+
+<script>
+const DPI = 203;
+const mm = v => Math.round(v / 25.4 * DPI);
+const SIZES = { '60x40': {pw:48, h:40}, '40x30': {pw:40, h:30} };
+const SCREEN_SCALE = 6.0 / (DPI/25.4); // CSS px per device px so 48mm ≈ 288 css px
+const g = id => document.getElementById(id);
+let logoImg = null;
+
+// ---------- helpers ----------
+function fitFont(ctx, text, weight, maxW, startPx, minPx){
+  for(let s = startPx; s > minPx; s -= 1){
+    ctx.font = `${weight} ${s}px Vazirmatn`;
+    if(ctx.measureText(text).width <= maxW) return s;
+  }
+  return minPx;
+}
+function lineH(px){ return Math.round(px * 1.18); }
+
+function drawQR(ctx, value, x, y, size){
+  const qr = qrcode(0, 'M');
+  qr.addData(value); qr.make();
+  const n = qr.getModuleCount();
+  const cell = Math.floor(size / n);
+  const real = cell * n;
+  const ox = x + Math.floor((size - real)/2), oy = y + Math.floor((size - real)/2);
+  ctx.fillStyle = '#000';
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(qr.isDark(r,c))
+    ctx.fillRect(ox + c*cell, oy + r*cell, cell, cell);
+  return real;
+}
+
+// ---------- main render ----------
+function renderLabel(canvas, data){
+  const s = SIZES[data.size] || SIZES['60x40'];
+  const W = mm(s.pw), H = mm(s.h);
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#000'; ctx.textBaseline = 'top';
+
+  const code = (data.code||'').trim();
+  const line2 = (data.line2||'').trim();
+  const line3 = (data.line3||'').trim();
+  const footer = (data.footer||'').trim();
+  const footer2 = (data.footer2||'').trim();
+  const qrVal = (data.qr_value||'').trim() || code || footer;
+  const pad = mm(2);
+
+  // footer metrics (bottom, both layouts)
+  const foots = [footer, footer2].filter(Boolean);
+  const footFonts = foots.map(t => fitFont(ctx,t,'400',W-mm(4),mm(3.8),11));
+  const footH = foots.reduce((a,_,i)=>a+lineH(footFonts[i]),0) + (foots.length>1?mm(0.6):0);
+  const bottomPad = mm(1.5);
+  const contentBottom = H - (foots.length? footH+mm(2):0) - bottomPad;
+
+  function drawCentered(text, weight, px, y){
+    ctx.font = `${weight} ${px}px Vazirmatn`;
+    const w = ctx.measureText(text).width;
+    ctx.fillText(text, (W-w)/2, y);
+  }
+
+  if(data.layout === 'side'){
+    const availH = contentBottom - pad;
+    // estimate text block height to size QR to match
+    function buildText(tw){
+      const items=[];
+      if(logoImg && data.logo){
+        const lh = Math.min(Math.round(H*0.24), Math.round(tw*logoImg.height/logoImg.width));
+        items.push({logo:true, w:Math.round(lh*logoImg.width/logoImg.height), h:lh});
+      }
+      if(code){ const f=fitFont(ctx,code,'700',tw,mm(6),13); items.push({t:code,w:'700',px:f,h:lineH(f)});}
+      if(line2){ const f=fitFont(ctx,line2,'400',tw,mm(4),11); items.push({t:line2,w:'400',px:f,h:lineH(f)});}
+      if(line3){ const f=fitFont(ctx,line3,'400',tw,mm(3.4),10); items.push({t:line3,w:'400',px:f,h:lineH(f)});}
+      const gap=mm(1.2);
+      const total=items.reduce((a,it)=>a+it.h,0)+gap*Math.max(0,items.length-1);
+      return {items,total,gap};
+    }
+    let est = buildText(W - 2*pad - mm(15) - mm(2));
+    let qpx = qrVal ? Math.max(mm(11), Math.min(est.total, availH)) : 0;
+    let tx0 = pad;
+    if(qpx > mm(6)){ drawQR(ctx, qrVal, pad, pad + (availH-qpx)/2, qpx); tx0 = pad + qpx + mm(2); }
+    const tw = W - pad - tx0;
+    const blk = buildText(tw);
+    let by = pad + Math.max(0,(availH-blk.total)/2);
+    for(const it of blk.items){
+      if(it.logo){ ctx.drawImage(logoImg, tx0, by, it.w, it.h); }
+      else { ctx.font = `${it.w} ${it.px}px Vazirmatn`; ctx.fillText(it.t, tx0, by); }
+      by += it.h + blk.gap;
+    }
+  } else {
+    let y = pad;
+    if(data.logo && logoImg){
+      const lh = Math.round(H*0.28), lw = Math.round(lh*logoImg.width/logoImg.height);
+      const f = code ? fitFont(ctx,code,'700',W-mm(3)-lw-mm(1.5),mm(6),14) : 0;
+      ctx.font = `700 ${f}px Vazirmatn`;
+      const cw = code ? ctx.measureText(code).width : 0;
+      const band = Math.max(lh, code?lineH(f):0);
+      const bw = lw + (code? mm(1.5)+cw : 0);
+      const x0 = (W-bw)/2;
+      ctx.drawImage(logoImg, x0, y+(band-lh)/2, lw, lh);
+      if(code){ ctx.fillText(code, x0+lw+mm(1.5), y+(band-lineH(f))/2); }
+      y += band + mm(1.5);
+    } else if(code){
+      const f = fitFont(ctx,code,'700',W-mm(6),mm(7),18);
+      drawCentered(code,'700',f,y); y += lineH(f)+mm(1.2);
+    }
+    if(line2){ const f=fitFont(ctx,line2,'400',W-mm(6),mm(4),12); drawCentered(line2,'400',f,y); y+=lineH(f)+mm(1.0); }
+    if(line3){ const f=fitFont(ctx,line3,'400',W-mm(6),mm(3.4),10); drawCentered(line3,'400',f,y); y+=lineH(f)+mm(1.0); }
+    const availH = contentBottom - y;
+    if(qrVal && availH > mm(6)){
+      const qpx = Math.min(availH, W-mm(6));
+      drawQR(ctx, qrVal, (W-qpx)/2, y, qpx);
+    }
+  }
+
+  // footers
+  if(foots.length){
+    let fy = H - bottomPad - footH;
+    foots.forEach((t,i)=>{ drawCentered(t,'400',footFonts[i],fy); fy += lineH(footFonts[i]) + mm(0.6); });
+  }
+
+  // horizontal nudge
+  const nudge = parseFloat(data.nudge)||0;
+  if(nudge){
+    const dx = Math.round(nudge/25.4*DPI);
+    const img = ctx.getImageData(0,0,W,H);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    ctx.putImageData(img, dx, 0);
+  }
+  return {W,H,pw:s.pw,h:s.h};
+}
+
+// ---------- UI wiring ----------
+function data(){return{size:g('size').value,layout:g('layout').value,code:g('code').value,line2:g('line2').value,
+  line3:g('line3').value,qr_value:g('qr_value').value,footer:g('footer').value,footer2:g('footer2').value,
+  logo:g('logo').checked,nudge:g('nudge').value};}
+
+function refresh(){
+  const dims = renderLabel(g('prev'), data());
+  g('prev').style.width = (dims.pw*6)+'px';
+  g('prev').style.height = (dims.h*6)+'px';
+  g('nudgeval').textContent = (parseFloat(g('nudge').value)||0).toFixed(1)+' mm';
+  try{ localStorage.setItem('nudge', g('nudge').value); }catch(e){}
+}
+
+['size','layout','code','line2','line3','qr_value','footer','footer2','copies','logo','nudge']
+  .forEach(id=>{ g(id).addEventListener('input',refresh); g(id).addEventListener('change',refresh); });
+
+g('logofile').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { const im = new Image(); im.onload=()=>{logoImg=im; g('logo').checked=true; try{localStorage.setItem('logo',r.result)}catch(e){} refresh();}; im.src=r.result; };
+  r.readAsDataURL(f);
+});
+g('clearlogo').addEventListener('click', ()=>{ logoImg=null; g('logo').checked=false; g('logofile').value=''; try{localStorage.removeItem('logo')}catch(e){} refresh(); });
+
+// batch count
+function parseNum(s){ const m=(s||'').match(/(\d+)\D*$/); return m?parseInt(m[1]):NaN; }
+function batchInfo(){
+  const pre=(g('from_code').value.match(/^(.*?)(\d+)(\D*)$/));
+  if(!pre) return null;
+  const start=parseInt(pre[2]), width=pre[2].length;
+  let end=parseNum(g('to_code').value); if(isNaN(end)) end=start;
+  let a=start,b=end; if(b<a){const t=a;a=b;b=t;}
+  const codes=[]; for(let i=a;i<=b && codes.length<=500;i++) codes.push(pre[1]+String(i).padStart(width,'0')+pre[3]);
+  return codes;
+}
+function updBatch(){ const c=batchInfo(); g('batchcount').textContent = c?c.length:0; }
+['from_code','to_code'].forEach(id=>g(id).addEventListener('input',()=>{ updBatch();
+  if(id==='from_code' && g('from_code').value.trim()){ g('code').value=g('from_code').value; refresh(); } }));
+
+// ---------- printing ----------
+function labelsToPrintArea(codes){
+  const d = data();
+  const area = g('printArea'); area.innerHTML='';
+  const s = SIZES[d.size];
+  const style = document.createElement('style');
+  style.textContent = `@media print{ @page{ size:${s.pw}mm ${s.h}mm; margin:0 } body>*{display:none!important}
+    #printArea{display:block!important} .lbl{width:${s.pw}mm;height:${s.h}mm;page-break-after:always;display:flex;align-items:center;justify-content:center}
+    .lbl img{width:${s.pw}mm;height:${s.h}mm} }`;
+  area.appendChild(style);
+  const cv = document.createElement('canvas');
+  codes.forEach(code=>{
+    renderLabel(cv, {...d, code});
+    const img = new Image(); img.src = cv.toDataURL('image/png');
+    const div = document.createElement('div'); div.className='lbl'; div.appendChild(img);
+    area.appendChild(div);
+  });
+}
+g('printbtn').addEventListener('click', ()=>{
+  const n = Math.max(1, Math.min(200, parseInt(g('copies').value)||1));
+  labelsToPrintArea(Array(n).fill(data().code));
+  setTimeout(()=>window.print(), 120);
+});
+g('batchbtn').addEventListener('click', ()=>{
+  const codes = batchInfo();
+  if(!codes || codes.length<1){ alert('Enter a valid From code with a number, e.g. CH-00001'); return; }
+  if(!confirm('Print '+codes.length+' labels ('+codes[0]+' → '+codes[codes.length-1]+')?')) return;
+  labelsToPrintArea(codes);
+  setTimeout(()=>window.print(), 150);
+});
+
+// ---------- init ----------
+try{ const n=localStorage.getItem('nudge'); if(n!==null) g('nudge').value=n; }catch(e){}
+function boot(){
+  try{ const l=localStorage.getItem('logo'); if(l){ const im=new Image(); im.onload=()=>{logoImg=im; refresh();}; im.src=l; } }catch(e){}
+  updBatch(); refresh();
+}
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(boot); setTimeout(boot,600); } else boot();
+</script>
+</body>
+</html>
